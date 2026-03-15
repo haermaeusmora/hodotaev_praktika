@@ -2,9 +2,6 @@ using hodotaev_library.Models;
 
 namespace hodotaev_library.Services;
 
-/// <summary>
-/// Сервис для работы с партнерами
-/// </summary>
 public interface IPartnerService
 {
     Task<List<HodotaevPartner>> GetAllPartnersAsync();
@@ -16,4 +13,8 @@ public interface IPartnerService
     Task<decimal> CalculateDiscountAsync(int partnerId);
     Task<List<HodotaevSale>> GetPartnerSalesHistoryAsync(int partnerId);
     Task LogRatingChangeAsync(int partnerId, int oldRating, int newRating, string reason, string changedBy);
+    
+    Task<HodotaevSale> AddSaleAsync(HodotaevSale sale);
+    Task DeleteSaleAsync(int saleId);
+    Task<List<HodotaevProduct>> GetAllProductsAsync();
 }

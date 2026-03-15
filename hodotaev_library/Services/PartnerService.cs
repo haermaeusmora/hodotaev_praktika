@@ -4,9 +4,6 @@ using hodotaev_library.Models;
 
 namespace hodotaev_library.Services;
 
-/// <summary>
-/// Реализация сервиса для работы с партнерами
-/// </summary>
 public class PartnerService : IPartnerService
 {
     private readonly HodotaevPraktikaContext? _context;
@@ -16,9 +13,6 @@ public class PartnerService : IPartnerService
         _context = context;
     }
 
-    /// <summary>
-    /// Получить всех партнеров с информацией о типе и сумме продаж
-    /// </summary>
     public async Task<List<HodotaevPartner>> GetAllPartnersAsync()
     {
         var partners = await _context.HodotaevPartners
@@ -43,7 +37,6 @@ public class PartnerService : IPartnerService
             })
             .ToListAsync();
 
-        // Рассчитываем скидку для каждого партнера
         foreach (var partner in partners)
         {
             partner.Discount = CalculateDiscount(partner.TotalSalesAmount);
@@ -52,9 +45,6 @@ public class PartnerService : IPartnerService
         return partners;
     }
 
-    /// <summary>
-    /// Получить партнера по ID
-    /// </summary>
     public async Task<HodotaevPartner?> GetPartnerByIdAsync(int id)
     {
         return await _context.HodotaevPartners
@@ -62,12 +52,8 @@ public class PartnerService : IPartnerService
             .FirstOrDefaultAsync(p => p.PartnerId == id);
     }
 
-    /// <summary>
-    /// Добавить нового партнера
-    /// </summary>
     public async Task<HodotaevPartner> AddPartnerAsync(HodotaevPartner partner)
     {
-        // Валидация данных
         ValidatePartner(partner);
 
         partner.CreatedAt = DateTime.UtcNow;
@@ -76,7 +62,6 @@ public class PartnerService : IPartnerService
         _context.HodotaevPartners.Add(partner);
         await _context.SaveChangesAsync();
 
-        // Загружаем тип партнера для возвращаемого объекта
         if (partner.PartnerTypeId != 0)
         {
             partner.PartnerType = await _context.HodotaevPartnerTypes
@@ -86,12 +71,8 @@ public class PartnerService : IPartnerService
         return partner;
     }
 
-    /// <summary>
-    /// Обновить данные партнера
-    /// </summary>
     public async Task<HodotaevPartner> UpdatePartnerAsync(HodotaevPartner partner)
     {
-        // Валидация данных
         ValidatePartner(partner);
 
         var existingPartner = await _context.HodotaevPartners
@@ -102,7 +83,6 @@ public class PartnerService : IPartnerService
             throw new InvalidOperationException($"Партнер с ID {partner.PartnerId} не найден");
         }
 
-        // Проверяем изменение рейтинга для логирования
         if (existingPartner.Rating != partner.Rating)
         {
             await LogRatingChangeAsync(
@@ -113,7 +93,6 @@ public class PartnerService : IPartnerService
                 "System");
         }
 
-        // Обновляем поля
         existingPartner.PartnerTypeId = partner.PartnerTypeId;
         existingPartner.CompanyName = partner.CompanyName;
         existingPartner.LegalAddress = partner.LegalAddress;
@@ -126,14 +105,10 @@ public class PartnerService : IPartnerService
 
         await _context.SaveChangesAsync();
 
-        // Загружаем обновленные данные
-        return await GetPartnerByIdAsync(partner.PartnerId) 
+        return await GetPartnerByIdAsync(partner.PartnerId)
             ?? throw new InvalidOperationException("Не удалось загрузить обновленные данные партнера");
     }
 
-    /// <summary>
-    /// Удалить партнера
-    /// </summary>
     public async Task DeletePartnerAsync(int id)
     {
         var partner = await _context.HodotaevPartners
@@ -145,21 +120,23 @@ public class PartnerService : IPartnerService
             throw new InvalidOperationException($"Партнер с ID {id} не найден");
         }
 
-        // Проверяем наличие продаж
         if (partner.Sales.Any())
         {
-            throw new InvalidOperationException(
-                "Невозможно удалить партнера: существуют записи о продажах. " +
-                "Сначала удалите историю продаж или выберите другого партнера.");
+            _context.HodotaevSales.RemoveRange(partner.Sales);
+        }
+
+        var ratingHistory = await _context.HodotaevPartnerRatingHistories
+            .Where(h => h.PartnerId == id)
+            .ToListAsync();
+        if (ratingHistory.Any())
+        {
+            _context.HodotaevPartnerRatingHistories.RemoveRange(ratingHistory);
         }
 
         _context.HodotaevPartners.Remove(partner);
         await _context.SaveChangesAsync();
     }
 
-    /// <summary>
-    /// Получить список типов партнеров
-    /// </summary>
     public async Task<List<HodotaevPartnerType>> GetPartnerTypesAsync()
     {
         return await _context.HodotaevPartnerTypes
@@ -167,11 +144,6 @@ public class PartnerService : IPartnerService
             .ToListAsync();
     }
 
-    /// <summary>
-    /// Рассчитать скидку для партнера на основе объема продаж
-    /// Правила из методички:
-    /// до 10000 – 0%, от 10000 до 50000 – 5%, от 50000 до 300000 – 10%, более 300000 – 15%
-    /// </summary>
     public decimal CalculateDiscount(decimal totalSalesAmount)
     {
         if (totalSalesAmount < 10000)
@@ -184,9 +156,6 @@ public class PartnerService : IPartnerService
             return 15;
     }
 
-    /// <summary>
-    /// Получить скидку партнера по ID (асинхронная версия)
-    /// </summary>
     public async Task<decimal> CalculateDiscountAsync(int partnerId)
     {
         var totalSales = await _context.HodotaevSales
@@ -196,9 +165,6 @@ public class PartnerService : IPartnerService
         return CalculateDiscount(totalSales);
     }
 
-    /// <summary>
-    /// Получить историю продаж партнера
-    /// </summary>
     public async Task<List<HodotaevSale>> GetPartnerSalesHistoryAsync(int partnerId)
     {
         return await _context.HodotaevSales
@@ -208,9 +174,6 @@ public class PartnerService : IPartnerService
             .ToListAsync();
     }
 
-    /// <summary>
-    /// Записать изменение рейтинга в историю
-    /// </summary>
     public async Task LogRatingChangeAsync(int partnerId, int oldRating, int newRating, string reason, string changedBy)
     {
         var historyEntry = new HodotaevPartnerRatingHistory
@@ -227,9 +190,52 @@ public class PartnerService : IPartnerService
         await _context.SaveChangesAsync();
     }
 
-    /// <summary>
-    /// Валидация данных партнера
-    /// </summary>
+    public async Task<HodotaevSale> AddSaleAsync(HodotaevSale sale)
+    {
+        if (sale.Quantity <= 0)
+            throw new ValidationException("Количество должно быть больше нуля");
+
+        if (sale.SalePrice < 0)
+            throw new ValidationException("Цена должна быть неотрицательной");
+
+        var partner = await _context.HodotaevPartners.FindAsync(sale.PartnerId);
+        if (partner == null)
+            throw new ValidationException($"Партнер с ID {sale.PartnerId} не найден");
+
+        var product = await _context.HodotaevProducts.FindAsync(sale.ProductId);
+        if (product == null)
+            throw new ValidationException($"Продукт с ID {sale.ProductId} не найден");
+
+        sale.CreatedAt = DateTime.UtcNow;
+        if (sale.SaleDate == default)
+            sale.SaleDate = DateTime.UtcNow;
+
+        _context.HodotaevSales.Add(sale);
+        await _context.SaveChangesAsync();
+
+        sale.Product = await _context.HodotaevProducts.FindAsync(sale.ProductId);
+        sale.Partner = await _context.HodotaevPartners.FindAsync(sale.PartnerId);
+
+        return sale;
+    }
+
+    public async Task DeleteSaleAsync(int saleId)
+    {
+        var sale = await _context.HodotaevSales.FindAsync(saleId);
+        if (sale == null)
+            throw new InvalidOperationException($"Продажа с ID {saleId} не найдена");
+
+        _context.HodotaevSales.Remove(sale);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<HodotaevProduct>> GetAllProductsAsync()
+    {
+        return await _context.HodotaevProducts
+            .OrderBy(p => p.ProductName)
+            .ToListAsync();
+    }
+
     private void ValidatePartner(HodotaevPartner partner)
     {
         var errors = new List<string>();
@@ -252,9 +258,6 @@ public class PartnerService : IPartnerService
         }
     }
 
-    /// <summary>
-    /// Проверка корректности email
-    /// </summary>
     private bool IsValidEmail(string email)
     {
         try
@@ -269,9 +272,6 @@ public class PartnerService : IPartnerService
     }
 }
 
-/// <summary>
-/// Исключение валидации
-/// </summary>
 public class ValidationException : Exception
 {
     public ValidationException(string message) : base(message)

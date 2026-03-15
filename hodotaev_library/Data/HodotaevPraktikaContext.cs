@@ -3,9 +3,6 @@ using hodotaev_library.Models;
 
 namespace hodotaev_library.Data;
 
-/// <summary>
-/// Контекст базы данных для подсистемы работы с партнерами
-/// </summary>
 public class HodotaevPraktikaContext : DbContext
 {
     public HodotaevPraktikaContext()
@@ -17,7 +14,6 @@ public class HodotaevPraktikaContext : DbContext
     {
     }
 
-    // Таблицы базы данных
     public virtual DbSet<HodotaevPartner> HodotaevPartners { get; set; }
     public virtual DbSet<HodotaevPartnerType> HodotaevPartnerTypes { get; set; }
     public virtual DbSet<HodotaevProduct> HodotaevProducts { get; set; }
@@ -28,10 +24,8 @@ public class HodotaevPraktikaContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Настройка схемы
         modelBuilder.HasDefaultSchema("app");
 
-        // Настройка сущности PartnerType
         modelBuilder.Entity<HodotaevPartnerType>(entity =>
         {
             entity.ToTable("hodotaev_partner_types");
@@ -42,7 +36,6 @@ public class HodotaevPraktikaContext : DbContext
             entity.HasIndex(e => e.TypeName).IsUnique();
         });
 
-        // Настройка сущности Partner
         modelBuilder.Entity<HodotaevPartner>(entity =>
         {
             entity.ToTable("hodotaev_partners");
@@ -59,18 +52,15 @@ public class HodotaevPraktikaContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
 
-            // Связь с PartnerType
             entity.HasOne(e => e.PartnerType)
                   .WithMany(e => e.Partners)
                   .HasForeignKey(e => e.PartnerTypeId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("fk_partners_partner_type");
 
-            // Проверка рейтинга
             entity.HasCheckConstraint("CK_Partners_Rating", "rating >= 0");
         });
 
-        // Настройка сущности Product
         modelBuilder.Entity<HodotaevProduct>(entity =>
         {
             entity.ToTable("hodotaev_products");
@@ -86,11 +76,9 @@ public class HodotaevPraktikaContext : DbContext
 
             entity.HasIndex(e => e.Article).IsUnique();
 
-            // Проверка цены
             entity.HasCheckConstraint("CK_Products_MinPrice", "min_price >= 0");
         });
 
-        // Настройка сущности Sale
         modelBuilder.Entity<HodotaevSale>(entity =>
         {
             entity.ToTable("hodotaev_sales");
@@ -103,31 +91,26 @@ public class HodotaevPraktikaContext : DbContext
             entity.Property(e => e.SaleDate).HasColumnName("sale_date");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
 
-            // Связь с Partner
             entity.HasOne(e => e.Partner)
                   .WithMany(e => e.Sales)
                   .HasForeignKey(e => e.PartnerId)
-                  .OnDelete(DeleteBehavior.Restrict)
+                  .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("fk_sales_partner");
 
-            // Связь с Product
             entity.HasOne(e => e.Product)
                   .WithMany(e => e.Sales)
                   .HasForeignKey(e => e.ProductId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("fk_sales_product");
 
-            // Проверки
             entity.HasCheckConstraint("CK_Sales_Quantity", "quantity > 0");
             entity.HasCheckConstraint("CK_Sales_SalePrice", "sale_price >= 0");
 
-            // Индексы
             entity.HasIndex(e => e.PartnerId);
             entity.HasIndex(e => e.ProductId);
             entity.HasIndex(e => e.SaleDate);
         });
 
-        // Настройка сущности PartnerRatingHistory
         modelBuilder.Entity<HodotaevPartnerRatingHistory>(entity =>
         {
             entity.ToTable("hodotaev_partner_rating_history");
@@ -140,23 +123,19 @@ public class HodotaevPraktikaContext : DbContext
             entity.Property(e => e.ChangedAt).HasColumnName("changed_at");
             entity.Property(e => e.ChangedBy).HasColumnName("changed_by").HasMaxLength(100);
 
-            // Связь с Partner
             entity.HasOne(e => e.Partner)
                   .WithMany(e => e.RatingHistory)
                   .HasForeignKey(e => e.PartnerId)
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("fk_rating_history_partner");
 
-            // Индекс
             entity.HasIndex(e => e.PartnerId);
         });
 
-        // Настройка вызова функции базы данных для расчета скидки
         modelBuilder.HasDbFunction(typeof(HodotaevPraktikaContext)
             .GetMethod(nameof(CalculateDiscount), new[] { typeof(int) })!);
     }
 
-    // Метод для вызова функции расчета скидки из БД
     [DbFunction("hodotaev_calculate_discount", "app")]
     public static decimal CalculateDiscount(int partnerId)
     {

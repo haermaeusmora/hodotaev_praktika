@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using hodotaev_library.Models;
 using hodotaev_library.Services;
 
@@ -140,7 +141,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void btnDelete_Click(object sender, RoutedEventArgs e)
+    private async void btnDelete_Click(object sender, RoutedEventArgs e)
     {
         try
         {
@@ -155,8 +156,13 @@ public partial class MainWindow : Window
                 return;
             }
 
+            var salesCount = selectedPartner.TotalSalesAmount > 0 ?
+                $"У партнера есть история продаж, которая также будет удалена." :
+                "У партнера нет истории продаж.";
+
             var result = MessageBox.Show(
                 $"Вы действительно хотите удалить партнера \"{selectedPartner.CompanyName}\"?\n\n" +
+                $"{salesCount}\n" +
                 $"Это действие нельзя отменить.",
                 "Подтверждение удаления",
                 MessageBoxButton.YesNo,
@@ -165,7 +171,7 @@ public partial class MainWindow : Window
             if (result != MessageBoxResult.Yes)
                 return;
 
-            _partnerService.DeletePartnerAsync(selectedPartner.PartnerId).Wait();
+            await _partnerService.DeletePartnerAsync(selectedPartner.PartnerId);
 
             MessageBox.Show(
                 $"Партнер \"{selectedPartner.CompanyName}\" успешно удален.",
@@ -175,18 +181,22 @@ public partial class MainWindow : Window
 
             LoadPartners();
         }
-        catch (AggregateException ex) when (ex.InnerException is InvalidOperationException)
-        {
-            MessageBox.Show(
-                ex.InnerException.Message,
-                "Ошибка удаления",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
-        }
         catch (Exception ex)
         {
+            var errorMsg = $"Не удалось удалить партнера: {ex.GetBaseException().Message}";
+            
+            if (ex.InnerException != null)
+            {
+                errorMsg += $"\n\nВнутренняя ошибка: {ex.InnerException.Message}";
+            }
+            
+            if (ex is NpgsqlException npgsqlEx)
+            {
+                errorMsg += $"\n\nОшибка БД: {npgsqlEx.SqlState}";
+            }
+            
             MessageBox.Show(
-                $"Не удалось удалить партнера: {ex.GetBaseException().Message}",
+                errorMsg,
                 "Ошибка удаления",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);

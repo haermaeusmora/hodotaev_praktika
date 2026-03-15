@@ -4,9 +4,6 @@ using hodotaev_wpf.Views;
 
 namespace hodotaev_wpf.Presenters;
 
-/// <summary>
-/// Презентер для окна истории продаж
-/// </summary>
 public class SalesHistoryPresenter
 {
     private readonly ISalesHistoryView _view;
@@ -25,9 +22,6 @@ public class SalesHistoryPresenter
         _view.CloseRequested += OnCloseRequested;
     }
 
-    /// <summary>
-    /// Инициализация презентера
-    /// </summary>
     public void Initialize()
     {
         try
@@ -43,18 +37,12 @@ public class SalesHistoryPresenter
         }
     }
 
-    /// <summary>
-    /// Загрузка истории продаж
-    /// </summary>
     private void LoadSalesHistory()
     {
         var sales = _partnerService.GetPartnerSalesHistoryAsync(_partner.PartnerId).Result;
         _view.SetSalesHistory(sales);
     }
 
-    /// <summary>
-    /// Обработчик события закрытия
-    /// </summary>
     private void OnCloseRequested()
     {
         _view.Close();

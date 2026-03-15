@@ -4,9 +4,6 @@ using hodotaev_wpf.Views;
 
 namespace hodotaev_wpf.Presenters;
 
-/// <summary>
-/// Презентер для окна добавления/редактирования партнера
-/// </summary>
 public class PartnerEditPresenter
 {
     private readonly IPartnerEditView _view;
@@ -23,23 +20,17 @@ public class PartnerEditPresenter
         _partnerService = partnerService;
         _partnerId = partnerId;
 
-        // Подписка на события
         _view.SaveRequested += OnSaveRequested;
         _view.CancelRequested += OnCancelRequested;
     }
 
-    /// <summary>
-    /// Инициализация презентера
-    /// </summary>
     public void Initialize()
     {
         try
         {
-            // Загрузка типов партнеров
             var partnerTypes = _partnerService.GetPartnerTypesAsync().Result;
             _view.PartnerTypes = partnerTypes;
 
-            // Если редактируем - загружаем данные партнера
             if (_partnerId.HasValue)
             {
                 _currentPartner = _partnerService.GetPartnerByIdAsync(_partnerId.Value).Result;
@@ -53,7 +44,6 @@ public class PartnerEditPresenter
             }
             else
             {
-                // Создаем нового партнера
                 _view.Partner = new HodotaevPartner
                 {
                     Rating = 0
@@ -69,9 +59,6 @@ public class PartnerEditPresenter
         }
     }
 
-    /// <summary>
-    /// Обработчик события сохранения
-    /// </summary>
     private void OnSaveRequested()
     {
         try
@@ -82,7 +69,6 @@ public class PartnerEditPresenter
                 return;
             }
 
-            // Валидация данных
             if (string.IsNullOrWhiteSpace(_view.Partner.CompanyName))
             {
                 _view.ShowError("Наименование компании обязательно для заполнения.", "Ошибка валидации");
@@ -107,17 +93,14 @@ public class PartnerEditPresenter
                 return;
             }
 
-            // Сохранение
             if (_partnerId.HasValue)
             {
-                // Редактирование
                 _view.Partner.PartnerId = _partnerId.Value;
                 _partnerService.UpdatePartnerAsync(_view.Partner).Wait();
                 _view.ShowInfo($"Данные партнера \"{_view.Partner.CompanyName}\" успешно обновлены.", "Редактирование");
             }
             else
             {
-                // Добавление
                 _partnerService.AddPartnerAsync(_view.Partner).Wait();
                 _view.ShowInfo($"Партнер \"{_view.Partner.CompanyName}\" успешно добавлен.", "Добавление");
             }
@@ -137,18 +120,12 @@ public class PartnerEditPresenter
         }
     }
 
-    /// <summary>
-    /// Обработчик события отмены
-    /// </summary>
     private void OnCancelRequested()
     {
         _view.DialogResult = false;
         _view.Close();
     }
 
-    /// <summary>
-    /// Клонирование партнера
-    /// </summary>
     private HodotaevPartner ClonePartner(HodotaevPartner partner)
     {
         return new HodotaevPartner
@@ -165,9 +142,6 @@ public class PartnerEditPresenter
         };
     }
 
-    /// <summary>
-    /// Проверка корректности email
-    /// </summary>
     private bool IsValidEmail(string email)
     {
         try

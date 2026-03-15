@@ -3,9 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace hodotaev_library.Models;
 
-/// <summary>
-/// Партнер компании
-/// </summary>
 public class HodotaevPartner
 {
     [Key]
@@ -53,17 +50,14 @@ public class HodotaevPartner
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Навигационные свойства
     [ForeignKey(nameof(PartnerTypeId))]
     public virtual HodotaevPartnerType? PartnerType { get; set; }
     public virtual ICollection<HodotaevSale> Sales { get; set; } = new List<HodotaevSale>();
     public virtual ICollection<HodotaevPartnerRatingHistory> RatingHistory { get; set; } = new List<HodotaevPartnerRatingHistory>();
 
-    // Вычисляемое свойство для скидки (не сохраняется в БД)
     [NotMapped]
     public decimal Discount { get; set; }
 
-    // Вычисляемое свойство для общей суммы продаж (не сохраняется в БД)
     [NotMapped]
     public decimal TotalSalesAmount { get; set; }
 }

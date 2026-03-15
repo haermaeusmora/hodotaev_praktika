@@ -1,27 +1,32 @@
--- Скрипт создания базы данных
--- Запускать через psql из командной строки: psql -U postgres -f hodotaev_praktika.sql
+-- Полный скрипт создания базы данных для pgAdmin
+-- Каскадное удаление настроено для таблицы продаж
+-- Запускать через Query Tool в pgAdmin
 
-\c postgres
+-- Создание роли и базы данных (если есть права суперпользователя)
+-- Если нет - пропустите эти команды или выполните отдельно от postgres
 
-DROP ROLE IF EXISTS app;
-CREATE ROLE app WITH LOGIN PASSWORD '123456789';
+-- DROP ROLE IF EXISTS app;
+-- CREATE ROLE app WITH LOGIN PASSWORD '123456789';
 
-DROP DATABASE IF EXISTS hodotaev_praktika;
-CREATE DATABASE hodotaev_praktika OWNER app;
+-- DROP DATABASE IF EXISTS hodotaev_praktika;
+-- CREATE DATABASE hodotaev_praktika OWNER app;
 
-\c hodotaev_praktika
+-- Подключение к базе выполняется автоматически в Query Tool
 
+-- Создание схемы
 DROP SCHEMA IF EXISTS app CASCADE;
 CREATE SCHEMA app AUTHORIZATION app;
 
 ALTER ROLE app SET search_path TO app, public;
 
+-- Таблица типов партнеров
 CREATE TABLE app.hodotaev_partner_types (
     partner_type_id SERIAL PRIMARY KEY,
     type_name VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(500)
 );
 
+-- Таблица партнеров
 CREATE TABLE app.hodotaev_partners (
     partner_id SERIAL PRIMARY KEY,
     partner_type_id INTEGER NOT NULL,
@@ -42,6 +47,7 @@ CREATE TABLE app.hodotaev_partners (
 
 CREATE INDEX idx_partners_partner_type ON app.hodotaev_partners(partner_type_id);
 
+-- Таблица продукции
 CREATE TABLE app.hodotaev_products (
     product_id SERIAL PRIMARY KEY,
     product_name VARCHAR(255) NOT NULL,
@@ -53,6 +59,7 @@ CREATE TABLE app.hodotaev_products (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Таблица продаж (с каскадным удалением при удалении партнера)
 CREATE TABLE app.hodotaev_sales (
     sale_id SERIAL PRIMARY KEY,
     partner_id INTEGER NOT NULL,
@@ -75,6 +82,7 @@ CREATE INDEX idx_sales_partner ON app.hodotaev_sales(partner_id);
 CREATE INDEX idx_sales_product ON app.hodotaev_sales(product_id);
 CREATE INDEX idx_sales_date ON app.hodotaev_sales(sale_date);
 
+-- Таблица истории изменения рейтинга
 CREATE TABLE app.hodotaev_partner_rating_history (
     history_id SERIAL PRIMARY KEY,
     partner_id INTEGER NOT NULL,
@@ -91,6 +99,7 @@ CREATE TABLE app.hodotaev_partner_rating_history (
 
 CREATE INDEX idx_rating_history_partner ON app.hodotaev_partner_rating_history(partner_id);
 
+-- Представление для сводной информации о партнерах
 CREATE OR REPLACE VIEW app.hodotaev_partners_summary AS
 SELECT
     p.partner_id,
@@ -105,6 +114,7 @@ LEFT JOIN app.hodotaev_partner_types pt ON p.partner_type_id = pt.partner_type_i
 LEFT JOIN app.hodotaev_sales s ON p.partner_id = s.partner_id
 GROUP BY p.partner_id, p.company_name, pt.type_name, p.rating, p.phone, p.email;
 
+-- Функция расчета скидки
 CREATE OR REPLACE FUNCTION app.hodotaev_calculate_discount(p_partner_id INTEGER)
 RETURNS DECIMAL(5, 2) AS $$
 DECLARE
@@ -130,6 +140,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql STABLE;
 
+-- Функция обновления timestamp
 CREATE OR REPLACE FUNCTION app.hodotaev_update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -138,11 +149,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Триггер для обновления updated_at
 CREATE TRIGGER trg_partners_update_updated_at
     BEFORE UPDATE ON app.hodotaev_partners
     FOR EACH ROW
     EXECUTE FUNCTION app.hodotaev_update_updated_at_column();
 
+-- Тестовые данные: типы партнеров
 INSERT INTO app.hodotaev_partner_types (type_name, description) VALUES
 ('Оптовый магазин', 'Продажа продукции крупными партиями'),
 ('Розничный магазин', 'Продажа продукции в розницу'),
@@ -150,6 +163,7 @@ INSERT INTO app.hodotaev_partner_types (type_name, description) VALUES
 ('Дистрибьютор', 'Оптовая продажа с доставкой до конечных потребителей'),
 ('Корпоративный клиент', 'Продажа юридическим лицам для собственных нужд');
 
+-- Тестовые данные: продукция
 INSERT INTO app.hodotaev_products (product_name, article, product_type, description, min_price, unit) VALUES
 ('Ламинат Дуб Классик', 'LAM-001', 'Ламинат', 'Ламинированное напольное покрытие, 33 класс', 850.00, 'кв.м'),
 ('Ламинат Орех Премиум', 'LAM-002', 'Ламинат', 'Ламинированное напольное покрытие, 34 класс', 1200.00, 'кв.м'),
@@ -159,6 +173,7 @@ INSERT INTO app.hodotaev_products (product_name, article, product_type, descript
 ('Плинтус деревянный', 'PLI-001', 'Плинтус', 'Плинтус из натурального дерева', 350.00, 'м.п'),
 ('Подложка пробковая', 'SUB-001', 'Подложка', 'Подложка под ламинат 3мм', 450.00, 'кв.м');
 
+-- Тестовые данные: партнеры
 INSERT INTO app.hodotaev_partners (partner_type_id, company_name, legal_address, inn, director_full_name, phone, email, rating) VALUES
 (1, 'ООО "СтройМастер"', 'г. Москва, ул. Ленина, д. 10', '7701234567', 'Иванов Иван Иванович', '+7 (495) 123-45-67', 'info@stroymaster.ru', 5),
 (2, 'ИП Петров А.С.', 'г. Санкт-Петербург, Невский пр., д. 25', '7801234568', 'Петров Александр Сергеевич', '+7 (812) 234-56-78', 'petrov@mail.ru', 3),
@@ -166,6 +181,7 @@ INSERT INTO app.hodotaev_partners (partner_type_id, company_name, legal_address,
 (4, 'ЗАО "Торговый Дом Пол"', 'г. Казань, пр. Победы, д. 100', '1601234570', 'Кузнецов Петр Иванович', '+7 (843) 456-78-90', 'td@pol-kazan.ru', 5),
 (1, 'ООО "РегионСтрой"', 'г. Новосибирск, ул. Советская, д. 15', '5401234571', 'Смирнов Андрей Владимирович', '+7 (383) 567-89-01', 'region@stroy-nsk.ru', 2);
 
+-- Тестовые данные: продажи
 INSERT INTO app.hodotaev_sales (partner_id, product_id, quantity, sale_price, sale_date) VALUES
 (1, 1, 500, 850.00, '2024-01-15'),
 (1, 2, 300, 1200.00, '2024-02-20'),
@@ -182,6 +198,7 @@ INSERT INTO app.hodotaev_sales (partner_id, product_id, quantity, sale_price, sa
 (5, 6, 20, 350.00, '2024-03-05'),
 (5, 7, 10, 450.00, '2024-04-15');
 
+-- Предоставление прав
 GRANT ALL PRIVILEGES ON SCHEMA app TO app;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA app TO app;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA app TO app;

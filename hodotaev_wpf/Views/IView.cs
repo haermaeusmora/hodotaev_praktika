@@ -1,8 +1,5 @@
 namespace hodotaev_wpf.Views;
 
-/// <summary>
-/// Базовый интерфейс для View в MVP
-/// </summary>
 public interface IView
 {
     void Show();

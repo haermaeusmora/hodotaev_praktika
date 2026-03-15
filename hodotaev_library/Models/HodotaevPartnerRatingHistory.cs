@@ -3,9 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace hodotaev_library.Models;
 
-/// <summary>
-/// История изменений рейтинга партнера
-/// </summary>
 public class HodotaevPartnerRatingHistory
 {
     [Key]
@@ -34,7 +31,6 @@ public class HodotaevPartnerRatingHistory
     [StringLength(100)]
     public string? ChangedBy { get; set; }
 
-    // Навигационное свойство
     [ForeignKey(nameof(PartnerId))]
     public virtual HodotaevPartner? Partner { get; set; }
 }

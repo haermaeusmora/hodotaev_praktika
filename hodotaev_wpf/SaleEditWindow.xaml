@@ -1,0 +1,113 @@
+<Window x:Class="hodotaev_wpf.SaleEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:hodotaev_wpf"
+        mc:Ignorable="d"
+        Title="Редактирование продажи"
+        Height="400" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Loaded="Window_Loaded">
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Заголовок -->
+        <TextBlock Grid.Row="0"
+                   Text="Добавление/Редактирование продажи"
+                   FontSize="18"
+                   FontWeight="Bold"
+                   Margin="0,0,0,15"/>
+
+        <!-- Продукция -->
+        <StackPanel Grid.Row="1" Margin="0,5">
+            <TextBlock Text="Продукция:" FontWeight="Bold" Margin="0,0,0,5"/>
+            <ComboBox x:Name="cmbProduct"
+                      DisplayMemberPath="ProductName"
+                      SelectedValuePath="ProductId"
+                      Height="25"/>
+        </StackPanel>
+
+        <!-- Количество -->
+        <StackPanel Grid.Row="2" Margin="0,5">
+            <TextBlock Text="Количество:" FontWeight="Bold" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtQuantity"
+                     Height="25"
+                     TextAlignment="Right"
+                     PreviewTextInput="txtQuantity_PreviewTextInput"
+                     TextChanged="txtQuantity_TextChanged"/>
+        </StackPanel>
+
+        <!-- Цена за единицу -->
+        <StackPanel Grid.Row="3" Margin="0,5">
+            <TextBlock Text="Цена за единицу (руб.):" FontWeight="Bold" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtSalePrice"
+                     Height="25"
+                     TextAlignment="Right"
+                     PreviewTextInput="txtSalePrice_PreviewTextInput"
+                     TextChanged="txtSalePrice_TextChanged"/>
+        </StackPanel>
+
+        <!-- Дата продажи -->
+        <StackPanel Grid.Row="4" Margin="0,5">
+            <TextBlock Text="Дата продажи:" FontWeight="Bold" Margin="0,0,0,5"/>
+            <DatePicker x:Name="dpSaleDate"
+                        Height="25"
+                        SelectedDate="{x:Static sys:DateTime.Today}"
+                        xmlns:sys="clr-namespace:System;assembly=mscorlib"/>
+        </StackPanel>
+
+        <!-- Итоговая сумма -->
+        <Border Grid.Row="5"
+                Margin="0,10,0,0"
+                Padding="10"
+                Background="#e6f3ff"
+                CornerRadius="3">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                           Text="Итоговая сумма:"
+                           FontWeight="Bold"
+                           FontSize="14"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="0" Grid.Column="1"
+                           x:Name="txtTotalAmount"
+                           Text="0.00 руб."
+                           FontWeight="Bold"
+                           FontSize="16"
+                           Foreground="#0066cc"/>
+            </Grid>
+        </Border>
+
+        <!-- Кнопки -->
+        <StackPanel Grid.Row="7"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,15,0,0">
+            <Button x:Name="btnSave"
+                    Content="_Сохранить"
+                    Click="btnSave_Click"
+                    Padding="20,8"
+                    Margin="0,0,10,0"/>
+            <Button x:Name="btnCancel"
+                    Content="_Отмена"
+                    Click="btnCancel_Click"
+                    Padding="20,8"
+                    IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

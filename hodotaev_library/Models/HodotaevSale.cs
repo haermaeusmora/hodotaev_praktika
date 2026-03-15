@@ -3,9 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace hodotaev_library.Models;
 
-/// <summary>
-/// Продажа продукции партнером (история реализации)
-/// </summary>
 public class HodotaevSale
 {
     [Key]
@@ -37,7 +34,6 @@ public class HodotaevSale
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Навигационные свойства
     [ForeignKey(nameof(PartnerId))]
     public virtual HodotaevPartner? Partner { get; set; }
 

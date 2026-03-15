@@ -87,7 +87,7 @@
         </Border>
         
         <!-- Таблица истории продаж -->
-        <DataGrid x:Name="dgSales" 
+        <DataGrid x:Name="dgSales"
                   Grid.Row="2"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
@@ -97,7 +97,8 @@
                   GridLinesVisibility="Horizontal"
                   HeadersVisibility="Column"
                   BorderBrush="Gray"
-                  BorderThickness="1">
+                  BorderThickness="1"
+                  SelectionChanged="dgSales_SelectionChanged">
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">
                     <Setter Property="Padding" Value="8,5"/>
@@ -126,14 +127,29 @@
                 <DataGridTextColumn Header="Сумма" Binding="{Binding TotalAmount, StringFormat={}{0:N2}}" Width="100"/>
             </DataGrid.Columns>
         </DataGrid>
-        
-        <!-- Кнопка закрытия -->
-        <StackPanel Grid.Row="3" 
-                    Orientation="Horizontal" 
+
+        <!-- Кнопки управления -->
+        <StackPanel Grid.Row="3"
+                    Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0,10,0,0">
-            <Button x:Name="btnClose" 
-                    Content="_Закрыть" 
+            <Button x:Name="btnAddSale"
+                    Content="_Добавить продажу"
+                    Click="btnAddSale_Click"
+                    Padding="15,8"
+                    Margin="0,0,10,0"/>
+            <Button x:Name="btnEditSale"
+                    Content="_Редактировать"
+                    Click="btnEditSale_Click"
+                    Padding="15,8"
+                    Margin="0,0,10,0"/>
+            <Button x:Name="btnDeleteSale"
+                    Content="_Удалить"
+                    Click="btnDeleteSale_Click"
+                    Padding="15,8"
+                    Margin="0,0,10,0"/>
+            <Button x:Name="btnClose"
+                    Content="_Закрыть"
                     Click="btnClose_Click"
                     Padding="20,8"
                     IsCancel="True"/>
